@@ -13,7 +13,7 @@ use tui::backend::{Backend, CrosstermBackend};
 use tui::Terminal;
 
 use crate::services::{create_acquisition_thread, SystemDataService};
-use crate::ui::ui;
+use crate::ui::run_ui;
 
 fn main() -> Result<(), Box<dyn Error>> {
     let mut quit = AtomicBool::new(false);
@@ -28,24 +28,8 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     println!("Dynamic data: {:?}", system_info_rx.recv().unwrap());
 
-
-    enable_raw_mode()?;
-    let mut stdout = io::stdout();
-    execute!(stdout, EnterAlternateScreen, EnableMouseCapture)?;
-    let backend = CrosstermBackend::new(stdout);
-    let mut terminal = Terminal::new(backend)?;
-
-    // create app and run it
-    let res = run_app(&mut terminal);
-
-    // restore terminal
-    disable_raw_mode()?;
-    execute!(
-        terminal.backend_mut(),
-        LeaveAlternateScreen,
-        DisableMouseCapture
-    )?;
-    terminal.show_cursor()?;
+    // create ui and run it
+    let res = run_ui();
 
     if let Err(err) = res {
         println!("{:?}", err)
@@ -54,15 +38,4 @@ fn main() -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
-fn run_app<B: Backend>(terminal: &mut Terminal<B>) -> io::Result<()> {
-    loop {
-        terminal.draw(ui)?;
-
-        if let Event::Key(key) = event::read()? {
-            if let KeyCode::Char('q') = key.code {
-                return Ok(());
-            }
-        }
-    }
-}
 
