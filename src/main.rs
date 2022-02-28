@@ -1,15 +1,21 @@
 pub mod services;
 
-use crate::services::SystemDataService;
+use std::sync::mpsc;
+use std::sync::atomic::{AtomicBool, Ordering};
+use std::thread;
+use std::time::Duration;
+use crate::services::{create_acquisition_thread, SystemDataService};
 
 fn main() {
-    println!("Hello, world!");
+    let mut quit = AtomicBool::new(false);
+    let (system_info_tx, system_info_rx) = mpsc::channel();
+
 
     let mut system_data_service = SystemDataService::new();
-    system_data_service.acquire();
+    println!("Static data: {:?}", system_data_service.static_data());
 
-    print!("CPU NAME: {}", system_data_service.static_data().computer_name);
-    // print!("CPU COUNT: {}", system_data_service.cpu_count().unwrap());
+    let _acquisition_thread = create_acquisition_thread(quit, system_info_tx, system_data_service);
 
 
+    println!("Dynamic data: {:?}", system_info_rx.recv().unwrap());
 }
