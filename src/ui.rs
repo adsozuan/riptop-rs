@@ -1,15 +1,17 @@
-use std::io;
-use std::sync::Arc;
-use std::sync::atomic::{AtomicBool, Ordering};
-use crossterm::event::{Event, KeyCode, DisableMouseCapture, EnableMouseCapture};
+use crossterm::event::{DisableMouseCapture, EnableMouseCapture, Event, KeyCode};
+use crossterm::terminal::{
+    disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen,
+};
 use crossterm::{event, execute};
-use crossterm::terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen};
+use std::io;
+use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::Arc;
 use tui::backend::{Backend, CrosstermBackend};
-use tui::{Frame, Terminal};
 use tui::layout::{Constraint, Direction, Layout};
 use tui::style::{Color, Style};
 use tui::text::Span;
-use tui::widgets::Block;
+use tui::widgets::{Block, Borders, Gauge};
+use tui::{Frame, Terminal};
 
 struct MainWidget {}
 
@@ -48,8 +50,15 @@ fn ui<B: Backend>(f: &mut Frame<B>) {
     let main_areas = Layout::default()
         .direction(Direction::Vertical)
         .margin(4)
-        .constraints([Constraint::Percentage(10), Constraint::Percentage(20), Constraint::Percentage(70)].as_ref())
-        .split(f.size());
+        .constraints(
+            [
+                Constraint::Percentage(10),
+                Constraint::Percentage(20),
+                Constraint::Percentage(70),
+            ]
+            .as_ref(),
+        )
+        .split(size);
 
     let sys_info_areas = Layout::default()
         .direction(Direction::Horizontal)
@@ -68,25 +77,33 @@ fn ui<B: Backend>(f: &mut Frame<B>) {
             Span::styled("CPU", Style::default().fg(Color::Yellow)),
             Span::from("& Cie"),
         ])
-        .style(Style::default());//.bg(Color::Green));
+        .borders(Borders::RIGHT)
+        .style(Style::default()); //.bg(Color::Green));
+
+    let cpu_label = format!("{:.2}%", 38);
+    let cpu_gauge = Gauge::default()
+        .block(sys_dyn_block)
+        .gauge_style(Style::default().fg(Color::Magenta).bg(Color::Black))
+        .label(cpu_label)
+        .ratio(0.8);
+    let mem_label = format!("{:.2}%", 11);
 
     let sys_static_block = Block::default()
         .title(vec![
             Span::styled("CPU TYPE", Style::default().fg(Color::Yellow)),
             Span::from("& Cie"),
         ])
-        .style(Style::default());//.bg(Color::Red));
+        .style(Style::default()); 
 
     let process_block = Block::default()
         .title(vec![
             Span::styled("Processes", Style::default().fg(Color::White)),
             Span::from("---"),
-        ])
-        .style(Style::default());//.bg(Color::Gray));
+        ]).borders(Borders::TOP)
+        .style(Style::default()); 
 
     f.render_widget(title_block, main_areas[0]);
-    f.render_widget(sys_dyn_block, sys_info_areas[0]);
+    f.render_widget(cpu_gauge, sys_info_areas[0]);
     f.render_widget(sys_static_block, sys_info_areas[1]);
     f.render_widget(process_block, main_areas[2]);
 }
-
