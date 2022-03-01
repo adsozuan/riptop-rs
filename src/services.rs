@@ -1,6 +1,7 @@
 extern crate sysinfo;
 
 use sysinfo::{ProcessExt, ProcessorExt, ProcessStatus, System, SystemExt};
+use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::thread;
 use std::time::Duration;
@@ -80,7 +81,7 @@ impl Default for SystemDataService {
     }
 }
 
-pub fn create_acquisition_thread(quit: AtomicBool, system_info_tx: std::sync::mpsc::Sender<SystemInfoDynamicData>,
+pub fn create_acquisition_thread(quit: Arc<AtomicBool>, system_info_tx: std::sync::mpsc::Sender<SystemInfoDynamicData>,
                                  mut system_data_service: SystemDataService) {
     thread::spawn(move || {
         loop {
@@ -91,7 +92,6 @@ pub fn create_acquisition_thread(quit: AtomicBool, system_info_tx: std::sync::mp
             system_data_service.acquire();
             system_info_tx.send(system_data_service.dynamic_data());
             thread::sleep(Duration::from_millis(500));
-            println!("Dynamic");
         }
     });
 }
