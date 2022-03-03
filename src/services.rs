@@ -90,8 +90,11 @@ pub fn create_acquisition_thread(quit: Arc<AtomicBool>, system_info_tx: std::syn
                 break;
             }
             system_data_service.acquire();
-            system_info_tx.send(system_data_service.dynamic_data());
-            thread::sleep(Duration::from_millis(500));
+            let res = system_info_tx.send(system_data_service.dynamic_data()); 
+            match res {
+                Ok(_) => thread::sleep(Duration::from_millis(500)),
+                Err(_) => panic!("Unable to send system info data. {:?}", res.unwrap()),
+            };
         }
     });
 }

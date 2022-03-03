@@ -24,7 +24,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     println!("Dynamic data: {:?}", system_info_rx.recv().unwrap());
 
     // create ui and run it
-    let res = run_ui(quit_write);
+    let res = run_ui(quit_write, system_info_rx);
 
     if let Err(err) = res {
         println!("{:?}", err)
