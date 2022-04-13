@@ -47,11 +47,13 @@ pub fn run_ui(
                              system_info_static_data.clone(),
                              incoming_info))?;
 
-        if let Event::Key(key) = event::read()? {
-            if let KeyCode::Char('q') = key.code {
-                println!("Quit wanted by user.");
-                quit.store(true, Ordering::Relaxed);
-                break;
+        if crossterm::event::poll(Duration::from_millis(200))? {
+            if let Event::Key(key) = event::read()? {
+                if let KeyCode::Char('q') = key.code {
+                    println!("Quit wanted by user.");
+                    quit.store(true, Ordering::Relaxed);
+                    break;
+                }
             }
         }
     }
