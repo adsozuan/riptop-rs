@@ -112,7 +112,8 @@ fn ui<B: Backend>(f: &mut Frame<B>, system_info_static: SystemInfoStaticData,
 fn draw_title<B: Backend>(f: &mut Frame<'_, B>, hostname: String, area: Rect) {
     let title = format!("riptop on {}", hostname);
     let text = vec![
-        Span::styled(title, Style::default().fg(Color::Yellow)),
+        Span::styled("riptop - ", Style::default().fg(Color::Yellow)),
+        Span::styled(hostname, Style::default().fg(Color::White)),
     ];
     let title_block = Block::default()
         .title(text.clone())
