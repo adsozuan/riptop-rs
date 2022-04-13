@@ -6,6 +6,7 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::thread;
 use std::time::Duration;
 
+
 #[derive(Debug, Clone)]
 pub struct SystemInfoStaticData {
     pub processor_name: String,
@@ -17,7 +18,7 @@ pub struct SystemInfoStaticData {
 #[derive(Debug)]
 pub struct SystemInfoDynamicData {
     pub cpu_usage: f64,
-    pub memory_usage_percentage: u64,
+    pub memory_usage_percentage: f64,
     pub page_memory_usage_percentage: u64,
     pub total_tasks_count: usize,
     pub running_tasks_count: usize,
@@ -54,9 +55,10 @@ impl SystemDataService {
     }
 
     pub fn dynamic_data(&self) -> SystemInfoDynamicData {
+        let mem_usage = (self.system.used_memory()/self.system.total_memory());
         SystemInfoDynamicData {
             cpu_usage: self.system.load_average().one,
-            memory_usage_percentage: self.system.used_memory(),
+            memory_usage_percentage: mem_usage as f64,
             page_memory_usage_percentage: self.system.used_swap(),
             total_tasks_count: self.system.processes().len(),
             running_tasks_count: self.running_tasks_count(),
