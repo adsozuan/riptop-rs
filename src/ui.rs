@@ -74,12 +74,12 @@ fn ui<B: Backend>(f: &mut Frame<B>, system_info_static: SystemInfoStaticData,
 
     let main_areas = Layout::default()
         .direction(Direction::Vertical)
-        .margin(4)
+        .margin(0)
         .constraints(
             [
-                Constraint::Percentage(10),
-                Constraint::Percentage(20),
-                Constraint::Percentage(70),
+                Constraint::Percentage(5), // title
+                Constraint::Percentage(20),// system information
+                Constraint::Percentage(75),// processes
             ]
                 .as_ref(),
         )
@@ -89,6 +89,7 @@ fn ui<B: Backend>(f: &mut Frame<B>, system_info_static: SystemInfoStaticData,
     // one for dynamic data on left, and one for static data on right
     let sys_info_areas = Layout::default()
         .direction(Direction::Horizontal)
+        .margin(1)
         .constraints([Constraint::Percentage(50), Constraint::Percentage(50)].as_ref())
         .split(main_areas[1]);
 
