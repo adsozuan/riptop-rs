@@ -1,3 +1,4 @@
+use std::fmt::Debug;
 use crossterm::event::{DisableMouseCapture, EnableMouseCapture, Event, KeyCode};
 use crossterm::terminal::{
     disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen,
@@ -6,7 +7,6 @@ use crossterm::{event, execute};
 use std::io;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{mpsc, Arc};
-use std::time::Duration;
 use tui::backend::{Backend, CrosstermBackend};
 use tui::layout::{Alignment, Constraint, Direction, Layout, Rect};
 use tui::style::{Color, Modifier, Style};
@@ -47,7 +47,7 @@ pub fn run_ui(
                              system_info_static_data.clone(),
                              incoming_info))?;
 
-        if crossterm::event::poll(Duration::from_millis(200))? {
+        if crossterm::event::poll(std::time::Duration::from_millis(200))? {
             if let Event::Key(key) = event::read()? {
                 if let KeyCode::Char('q') = key.code {
                     println!("Quit wanted by user.");
@@ -103,7 +103,8 @@ fn ui<B: Backend>(f: &mut Frame<B>, system_info_static: SystemInfoStaticData,
 
     draw_title(f, system_info_static.computer_name.clone(), main_areas[0]);
     draw_sys_info_left(f, sys_info_areas[0], system_info_dynamic.cpu_usage,
-                       system_info_dynamic.memory_usage_percentage);
+                       system_info_dynamic.memory_usage_percentage,
+                       system_info_dynamic.page_memory_usage_percentage);
     draw_sys_info_right(f, system_info_static, system_info_dynamic.total_tasks_count, system_info_dynamic.uptime, sys_info_areas[1]);
     // f.render_widget(process_block, main_areas[2]);
     draw_logo_block(f, main_areas[2]);
@@ -122,7 +123,7 @@ fn draw_title<B: Backend>(f: &mut Frame<'_, B>, hostname: String, area: Rect) {
     f.render_widget(title_block, area);
 }
 
-fn draw_sys_info_left<B: Backend>(f: &mut Frame<'_, B>, area: Rect, cpu: f64, mem: f64) {
+fn draw_sys_info_left<B: Backend>(f: &mut Frame<'_, B>, area: Rect, cpu: f64, mem: f64, pge: u64) {
     let columns = Layout::default()
         .direction(Direction::Horizontal)
         .constraints([Constraint::Percentage(25), Constraint::Percentage(75)].as_ref())
@@ -146,7 +147,7 @@ fn draw_sys_info_left<B: Backend>(f: &mut Frame<'_, B>, area: Rect, cpu: f64, me
         .block(Block::default())
         .gauge_style(Style::default().fg(Color::Magenta).bg(Color::Black))
         .label(cpu_label.clone())
-        .percent(32);
+        .ratio(cpu.clone());
     let mem_gauge = Gauge::default()
         .block(Block::default())
         .gauge_style(Style::default().fg(Color::Magenta).bg(Color::Black))
@@ -183,11 +184,15 @@ fn draw_sys_info_right<B: Backend>(f: &mut Frame<'_, B>, system_info_static: Sys
         Spans::from(Span::styled("Proc: ", Style::default().fg(Color::Yellow))),
     ];
 
+    let uptime_text = format_uptime(uptime);
+
+
+
     let values = vec![
         //Span::from("Proc: ", Style::default().fg(Color::Yellow)),
         Spans::from(task_count.to_string()),
         Spans::from(system_info_static.total_memory.to_string()),
-        Spans::from(uptime.to_string()),
+        Spans::from(uptime_text),
         Spans::from(system_info_static.processor_name),
     ];
 
@@ -199,6 +204,15 @@ fn draw_sys_info_right<B: Backend>(f: &mut Frame<'_, B>, system_info_static: Sys
 
     f.render_widget(sys_static_paragraph, columns[0]);
     f.render_widget(sys_static_values_paragraph, columns[1]);
+}
+
+fn format_uptime(uptime: u64) -> String {
+    let seconds = uptime % 60;
+    let minutes = (uptime / 60) % 60;
+    let hours = (uptime / 60) / 60;
+
+    let uptime_text = format!("{:02}:{:02}:{:02}", hours, minutes, seconds);
+    uptime_text
 }
 
 pub const BANNER: &str = r#"
