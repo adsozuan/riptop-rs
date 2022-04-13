@@ -124,50 +124,41 @@ fn draw_title<B: Backend>(f: &mut Frame<'_, B>, hostname: String, area: Rect) {
 }
 
 fn draw_sys_info_left<B: Backend>(f: &mut Frame<'_, B>, area: Rect, cpu: f64, mem: f64, pge: u64) {
-    let columns = Layout::default()
-        .direction(Direction::Horizontal)
-        .constraints([Constraint::Percentage(25), Constraint::Percentage(75)].as_ref())
-        .split(area);
     let gauges_lines = Layout::default()
         .direction(Direction::Vertical)
-        .constraints([Constraint::Percentage(33), Constraint::Percentage(33), Constraint::Percentage(33)].as_ref())
-        .split(columns[1]);
-    let labels = vec![
-        Spans::from(Span::styled("CPU: ", Style::default().fg(Color::Yellow))),
-        Spans::from(Span::styled("MEM: ", Style::default().fg(Color::Yellow))),
-        Spans::from(Span::styled("PGE: ", Style::default().fg(Color::Yellow))),
-    ];
+        .constraints([Constraint::Percentage(25),
+            Constraint::Percentage(25),
+            Constraint::Percentage(25),
+            Constraint::Percentage(25)].as_ref())
+        .split(area);
 
-    let sys_static_labels_paragraph = Paragraph::new(labels.clone())
-        .alignment(Alignment::Left);
+    draw_gauge(f, "CPU", cpu, gauges_lines[0]);
+    draw_gauge(f, "MEM", mem, gauges_lines[1]);
+    draw_gauge(f, "PGE", pge as f64, gauges_lines[2]);
+}
 
-    let cpu_label = format!("{:.2}%", cpu);
-    let mem_label = format!("{}%", mem);
-    let cpu_gauge = Gauge::default()
+fn draw_gauge<B: Backend>(f: &mut Frame<'_, B>, label:&str, value: f64, area: Rect){
+    let value_percent = format!("{}%", value);
+    let label_start = format!("{}[", label);
+    let label_end = "]";
+
+    let columns = Layout::default()
+        .direction(Direction::Horizontal)
+        .constraints([Constraint::Percentage(10), Constraint::Percentage(85),
+            Constraint::Percentage(5)].as_ref())
+        .split(area);
+
+    let label_start_block = Block::default().title(label_start).style(Style::default().fg(Color::Yellow));
+    let gauge = Gauge::default()
         .block(Block::default())
         .gauge_style(Style::default().fg(Color::Magenta).bg(Color::Black))
-        .label(cpu_label.clone())
-        .ratio(cpu.clone());
-    let mem_gauge = Gauge::default()
-        .block(Block::default())
-        .gauge_style(Style::default().fg(Color::Magenta).bg(Color::Black))
-        .label(mem_label.clone())
-        .ratio(mem.clone() as f64);
-    let pge_gauge = Gauge::default()
-        .block(Block::default())
-        .gauge_style(Style::default().fg(Color::Magenta).bg(Color::Black))
-        .label(cpu_label.clone())
-        .percent(11);
-    // let mem_gauge = Gauge::default()
-    //     .block(sys_dyn_block)
-    //     .gauge_style(Style::default().fg(Color::Magenta).bg(Color::Black))
-    //     .label(mem_label)
-    //     .ratio(0.8);
+        .label(value_percent)
+        .ratio(value);
+    let label_end_block = Block::default().title(label_end).style(Style::default().fg(Color::Yellow));
 
-    f.render_widget(sys_static_labels_paragraph, columns[0]);
-    f.render_widget(cpu_gauge, gauges_lines[0]);
-    f.render_widget(mem_gauge, gauges_lines[1]);
-    f.render_widget(pge_gauge, gauges_lines[2]);
+    f.render_widget(label_start_block, columns[0]);
+    f.render_widget(gauge, columns[1]);
+    f.render_widget(label_end_block, columns[2]);
 }
 
 fn draw_sys_info_right<B: Backend>(f: &mut Frame<'_, B>, system_info_static: SystemInfoStaticData,
@@ -186,8 +177,6 @@ fn draw_sys_info_right<B: Backend>(f: &mut Frame<'_, B>, system_info_static: Sys
 
     let uptime_text = format_uptime(uptime);
 
-
-
     let values = vec![
         //Span::from("Proc: ", Style::default().fg(Color::Yellow)),
         Spans::from(task_count.to_string()),
@@ -195,7 +184,6 @@ fn draw_sys_info_right<B: Backend>(f: &mut Frame<'_, B>, system_info_static: Sys
         Spans::from(uptime_text),
         Spans::from(system_info_static.processor_name),
     ];
-
 
     let sys_static_paragraph = Paragraph::new(labels.clone())
         .alignment(Alignment::Left);
