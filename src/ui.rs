@@ -7,8 +7,8 @@ use std::io;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{mpsc, Arc};
 use tui::backend::{Backend, CrosstermBackend};
-use tui::layout::{Constraint, Direction, Layout, Rect};
-use tui::style::{Color, Style};
+use tui::layout::{Alignment, Constraint, Direction, Layout, Rect};
+use tui::style::{Color, Modifier, Style};
 use tui::text::{Span, Text};
 use tui::widgets::{Block, Borders, Gauge, Paragraph};
 use tui::{Frame, Terminal};
@@ -96,7 +96,8 @@ fn ui<B: Backend>(f: &mut Frame<B>, system_info_static: SystemInfoStaticData,
         .style(Style::default());
 
     draw_title(f, system_info_static.computer_name.clone(), main_areas[0]);
-    draw_sys_info_dynamic(f, sys_info_areas[0], system_info_dynamic.cpu_usage);
+    draw_sys_info_dynamic(f, sys_info_areas[0], system_info_dynamic.cpu_usage,
+                          system_info_dynamic.memory_usage_percentage);
     draw_sys_info_static(f, system_info_static, sys_info_areas[1]);
     // f.render_widget(process_block, main_areas[2]);
     draw_logo_block(f, main_areas[2]);
@@ -108,11 +109,12 @@ fn draw_title<B: Backend>(f: &mut Frame<'_, B>, hostname: String, area: Rect) {
             Span::styled("riptop on ", Style::default().fg(Color::Yellow)),
             Span::from(hostname),
         ])
+        .title_alignment(Alignment::Center)
         .style(Style::default().bg(Color::Blue));
     f.render_widget(title_block, area);
 }
 
-fn draw_sys_info_dynamic<B: Backend>(f: &mut Frame<'_, B>, area: Rect, cpu: f64) {
+fn draw_sys_info_dynamic<B: Backend>(f: &mut Frame<'_, B>, area: Rect, cpu: f64, mem: u64) {
     let sys_dyn_block = Block::default()
         .title(vec![
             Span::styled("CPU: ", Style::default().fg(Color::Yellow)),
@@ -127,6 +129,12 @@ fn draw_sys_info_dynamic<B: Backend>(f: &mut Frame<'_, B>, area: Rect, cpu: f64)
         .gauge_style(Style::default().fg(Color::Magenta).bg(Color::Black))
         .label(cpu_label)
         .ratio(0.8);
+    let mem_label = format!("{}%", mem);
+    // let mem_gauge = Gauge::default()
+    //     .block(sys_dyn_block)
+    //     .gauge_style(Style::default().fg(Color::Magenta).bg(Color::Black))
+    //     .label(mem_label)
+    //     .ratio(0.8);
 
     f.render_widget(cpu_gauge, area);
 }
